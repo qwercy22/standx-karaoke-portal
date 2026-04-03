@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StandX Karaoke</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --neon-pink: #ff2d78;
+    --neon-cyan: #00f5ff;
+    --neon-purple: #bf00ff;
+    --neon-yellow: #ffe600;
+    --bg: #07050f;
+    --bg3: #1a1530;
+    --text: #e8e0ff;
+    --muted: #6b6085;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(0,245,255,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(191,0,255,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(0,245,255,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(255,45,120,0.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+    animation: bgPulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse { 0%{transform:translate(0,0)} 100%{transform:translate(2%,2%)} }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 680px; margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  header { text-align: center; padding: 44px 0 32px; }
+  .logo-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; letter-spacing: 6px;
+    color: var(--neon-cyan); text-transform: uppercase;
+    opacity: 0.8; margin-bottom: 8px;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 12vw, 90px); line-height: 0.9;
+    color: #fff;
+    letter-spacing: 2px;
+    animation: logoGrow 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes logoGrow {
+    0%   { opacity: 0; transform: scale(0.6); text-shadow: none; filter: blur(12px); }
+    40%  { opacity: 1; transform: scale(1.08); text-shadow: 0 0 40px #fff, 0 0 80px rgba(255,255,255,0.6); filter: blur(0); }
+    70%  { transform: scale(0.97); text-shadow: 0 0 60px #fff, 0 0 120px rgba(255,255,255,0.4); }
+    100% { transform: scale(1); text-shadow: 0 0 20px #fff, 0 0 60px rgba(255,255,255,0.3), 0 0 120px rgba(255,255,255,0.15); filter: blur(0); }
+  }
+
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 12vw, 90px); line-height: 0.9;
+    background: linear-gradient(135deg, var(--neon-pink) 0%, var(--neon-purple) 50%, var(--neon-cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255,45,120,0.4)); letter-spacing: 2px;
+  }
+  .logo-sub {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(16px, 4vw, 26px); letter-spacing: 12px;
+    color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan); margin-top: 4px;
+  }
+  .scanline {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-pink), var(--neon-purple), var(--neon-cyan), transparent);
+    margin: 24px 0; animation: scanPulse 3s ease-in-out infinite;
+  }
+  @keyframes scanPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  .conn-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin-bottom: 28px;
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase;
+  }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: all 0.4s; }
+  .conn-dot.live { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); animation: blink 2s ease-in-out infinite; }
+  .conn-dot.error { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+  .conn-label { color: var(--muted); transition: color 0.4s; }
+  .conn-label.live { color: var(--neon-cyan); }
+  .conn-label.error { color: var(--neon-pink); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .slot-status {
+    background: rgba(0,245,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .slot-status-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+  .slot-status-count { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--neon-cyan); }
+  .slot-status-count span { font-size: 16px; color: var(--muted); margin-left: 2px; }
+  .slots-dots { display: flex; gap: 5px; flex-wrap: wrap; max-width: 240px; justify-content: flex-end; }
+  .slot-dot { width: 20px; height: 7px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s; }
+  .slot-dot.filled { background: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: 0 0 6px var(--neon-cyan); }
+
+  .join-form {
+    background: rgba(0,245,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px;
+  }
+  .section-title {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    letter-spacing: 4px; color: var(--neon-cyan);
+    text-transform: uppercase; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .field label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--neon-cyan); text-transform: uppercase; }
+  .field input {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 13px 16px; color: #fff;
+    font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600;
+    letter-spacing: 0.5px; outline: none; transition: all 0.2s; width: 100%;
+  }
+  .field input:focus { border-color: var(--neon-cyan); background: rgba(0,245,255,0.06); box-shadow: 0 0 0 3px rgba(0,245,255,0.1); }
+  .field input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px;
+    border: none; border-radius: 8px; padding: 14px 22px; cursor: pointer;
+    transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+    color: #fff; box-shadow: 0 4px 20px rgba(255,45,120,0.3); margin-top: 6px;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,45,120,0.5); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .err-msg { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--neon-pink); letter-spacing: 1px; margin-top: 10px; display: none; }
+  .err-msg.show { display: block; }
+  .full-msg { background: rgba(255,230,0,0.06); border: 1px solid rgba(255,230,0,0.2); border-radius: 8px; padding: 16px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--neon-yellow); letter-spacing: 1px; text-align: center; display: none; margin-top: 10px; }
+  .full-msg.show { display: block; }
+
+  .success-card {
+    background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.3);
+    border-radius: 12px; padding: 36px 28px; text-align: center;
+    display: none; animation: fadeIn 0.4s ease;
+  }
+  .success-card.show { display: block; }
+  .success-icon { font-size: 48px; margin-bottom: 16px; }
+  .success-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 8px; }
+  .success-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .success-song { font-size: 15px; color: var(--muted); letter-spacing: 1px; }
+  .success-note { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-top: 20px; line-height: 1.6; }
+  .btn-rejoin { margin-top: 20px; background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); font-size: 13px; padding: 10px; border-radius: 6px; font-family: 'Space Mono', monospace; letter-spacing: 2px; cursor: pointer; width: 100%; transition: all 0.2s; }
+  .btn-rejoin:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+  #adminView { display: none; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .admin-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--neon-purple); letter-spacing: 3px; }
+  .admin-meta { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+  .admin-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .btn-sm { font-size: 12px; padding: 9px 16px; border-radius: 6px; font-family: 'Space Mono', monospace; letter-spacing: 1px; border: none; cursor: pointer; transition: all 0.2s; width: auto; }
+  .btn-danger { background: rgba(255,45,120,0.15); color: var(--neon-pink); border: 1px solid rgba(255,45,120,0.3); }
+  .btn-danger:hover { background: rgba(255,45,120,0.28); }
+  .btn-ghost { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); }
+  .btn-ghost:hover { color: #fff; }
+
+  .queue-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .queue-table th { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--neon-cyan); text-transform: uppercase; text-align: left; padding: 14px 18px; background: rgba(0,245,255,0.05); border-bottom: 1px solid var(--border); }
+  .queue-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 15px; font-weight: 600; vertical-align: middle; }
+  .queue-table tr:last-child td { border-bottom: none; }
+  .queue-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--neon-purple); width: 40px; }
+  .td-name { color: #fff; }
+  .td-song { color: var(--muted); font-size: 14px; }
+  .td-action { width: 50px; text-align: right; }
+  .btn-remove { background: rgba(255,45,120,0.1); border: 1px solid rgba(255,45,120,0.25); color: var(--neon-pink); border-radius: 5px; padding: 6px 10px; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .btn-remove:hover { background: rgba(255,45,120,0.25); }
+  .empty-queue { text-align: center; padding: 40px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); letter-spacing: 2px; border: 1px dashed rgba(255,255,255,0.07); border-radius: 10px; }
+
+  .admin-toggle { text-align: center; margin-top: 32px; }
+  .admin-toggle button { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 20px; color: var(--muted); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .admin-toggle button:hover { border-color: var(--neon-purple); color: var(--neon-purple); box-shadow: 0 0 15px rgba(191,0,255,0.2); }
+
+  .admin-login-panel { background: rgba(191,0,255,0.04); border: 1px solid rgba(191,0,255,0.2); border-radius: 12px; padding: 24px; margin-top: 16px; display: none; }
+  .admin-login-panel.visible { display: block; animation: fadeIn 0.3s ease; }
+  .admin-login-row { display: flex; gap: 10px; }
+  .admin-login-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(191,0,255,0.25); border-radius: 6px; padding: 11px 14px; color: #fff; font-family: 'Space Mono', monospace; font-size: 13px; outline: none; transition: all 0.2s; }
+  .admin-login-row input:focus { border-color: var(--neon-purple); box-shadow: 0 0 0 3px rgba(191,0,255,0.1); }
+  .btn-admin { background: linear-gradient(135deg, var(--neon-purple), #6600cc); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; padding: 11px 22px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-admin:hover { filter: brightness(1.2); }
+
+  .toast { position: fixed; bottom: 28px; right: 28px; background: var(--bg3); border: 1px solid var(--neon-cyan); border-radius: 8px; padding: 13px 18px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--neon-cyan); letter-spacing: 1px; box-shadow: 0 0 30px rgba(0,245,255,0.15); transform: translateX(120%); transition: transform 0.3s ease; z-index: 100; max-width: 280px; }
+  .toast.show { transform: translateX(0); }
+  .toast.error { border-color: var(--neon-pink); color: var(--neon-pink); }
+
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; transition: opacity 0.5s; }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-logo { font-family: 'Bebas Neue', sans-serif; font-size: 60px; letter-spacing: 4px; background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple), var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: logoPulse 1.5s ease-in-out infinite; }
+  @keyframes logoPulse { 0%,100%{filter:drop-shadow(0 0 20px rgba(255,45,120,0.6))} 50%{filter:drop-shadow(0 0 40px rgba(0,245,255,0.8))} }
+  .loading-text { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--muted); margin-top: 16px; text-transform: uppercase; }
+
+  footer { text-align: center; padding-top: 40px; font-family: 'Space Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.1); letter-spacing: 3px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-logo">StandX</div>
+  <div class="loading-text">Loading…</div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="logo-eyebrow">presents</div>
+    <div class="logo">StandX</div>
+    <div class="logo-sub">Karaoke Night</div>
+    <div class="scanline"></div>
+  </header>
+
+  <div class="conn-bar">
+    <div class="conn-dot" id="connDot"></div>
+    <span class="conn-label" id="connLabel">Connecting…</span>
+  </div>
+
+  <!-- PUBLIC VIEW -->
+  <div id="publicView">
+
+    <div class="slot-status">
+      <div>
+        <div class="slot-status-label">Available Slots</div>
+        <div class="slot-status-count" id="slotCount">— <span>/ 10</span></div>
+      </div>
+      <div class="slots-dots" id="slotDots"></div>
+    </div>
+
+    <div class="join-form" id="joinFormCard">
+      <div class="section-title">Sign Up to Sing</div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="inputName" placeholder="e.g. Alex" maxlength="30"/>
+      </div>
+      <div class="field">
+        <label>Song Title</label>
+        <input type="text" id="inputSong" placeholder="e.g. Bohemian Rhapsody" maxlength="60"/>
+      </div>
+      <p class="err-msg" id="formErr">⚠ Please fill in both fields.</p>
+      <div class="full-msg" id="fullMsg">🔥 ALL 10 SLOTS ARE TAKEN — CHECK BACK SOON</div>
+      <button class="btn btn-primary" id="joinBtn" onclick="joinQueue()" disabled>▶ GRAB MY SLOT</button>
+    </div>
+
+    <div class="success-card" id="successCard">
+      <div class="success-icon">🎤</div>
+      <div class="success-title">You're In!</div>
+      <div class="success-name" id="successName"></div>
+      <div class="success-song" id="successSong"></div>
+      <div class="success-note">Your slot is confirmed.<br/>Listen out for your name on the night!</div>
+      <button class="btn-rejoin" onclick="resetForm()">↩ SIGN UP ANOTHER PERSON</button>
+    </div>
+
+    <div class="admin-toggle">
+      <button onclick="toggleAdminPanel()">⚙ ADMIN</button>
+    </div>
+    <div class="admin-login-panel" id="adminLoginPanel">
+      <div class="section-title" style="margin-bottom:16px">Admin Access</div>
+      <div class="admin-login-row">
+        <input type="password" id="adminPwInput" placeholder="Enter password…" onkeydown="if(event.key==='Enter')adminLogin()"/>
+        <button class="btn-admin" onclick="adminLogin()">ENTER</button>
+      </div>
+      <p class="err-msg" id="adminErr">⚠ Incorrect password.</p>
+    </div>
+
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div id="adminView">
+    <div class="admin-header">
+      <div>
+        <div class="admin-title">⚙ Admin Panel</div>
+        <div class="admin-meta" id="adminMeta">0 participants</div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="adminLogout()">LOGOUT</button>
+    </div>
+    <div class="admin-actions">
+      <button class="btn btn-sm btn-danger" onclick="clearAll()">✕ CLEAR ALL</button>
+    </div>
+    <div id="adminQueueWrap"></div>
+  </div>
+
+  <footer>StandX Karaoke · Max 10 Slots · 🔥</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getDatabase, ref, onValue, push, remove, set, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBerISwNHXmqV3tPxvPT0PbjUIyEIm7-1k",
+    authDomain: "standx-8935f.firebaseapp.com",
+    databaseURL: "https://standx-8935f-default-rtdb.firebaseio.com",
+    projectId: "standx-8935f",
+    storageBucket: "standx-8935f.firebasestorage.app",
+    messagingSenderId: "821318590535",
+    appId: "1:821318590535:web:53e1dfa543d626b9161162",
+    measurementId: "G-HVLWESN5EY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const queueRef = ref(db, 'karaoke/queue');
+
+  const MAX_SLOTS = 10;
+  const ADMIN_PASSWORD = 'standx2025';
+  let isAdmin = false;
+  let liveQueue = [];
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.className = 'toast', 2800);
+  }
+
+  function setConn(state) {
+    const dot = document.getElementById('connDot');
+    const lbl = document.getElementById('connLabel');
+    if (state === 'live') { dot.className = 'conn-dot live'; lbl.className = 'conn-label live'; lbl.textContent = 'Live'; }
+    else if (state === 'error') { dot.className = 'conn-dot error'; lbl.className = 'conn-label error'; lbl.textContent = 'Disconnected'; }
+    else { dot.className = 'conn-dot'; lbl.className = 'conn-label'; lbl.textContent = 'Connecting…'; }
+  }
+
+  onValue(queueRef, (snapshot) => {
+    setConn('live');
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    const data = snapshot.val();
+    liveQueue = data
+      ? Object.entries(data).map(([key, val]) => ({ key, ...val })).sort((a, b) => (a.ts||0) - (b.ts||0))
+      : [];
+    renderPublic();
+    if (isAdmin) renderAdmin();
+  }, () => { setConn('error'); });
+
+  function renderPublic() {
+    const remaining = MAX_SLOTS - liveQueue.length;
+    document.getElementById('slotCount').innerHTML = `${remaining} <span>/ 10</span>`;
+    const dots = document.getElementById('slotDots');
+    dots.innerHTML = '';
+    for (let i = 0; i < MAX_SLOTS; i++) {
+      const d = document.createElement('div');
+      d.className = 'slot-dot' + (i < liveQueue.length ? ' filled' : '');
+      dots.appendChild(d);
+    }
+    const full = liveQueue.length >= MAX_SLOTS;
+    document.getElementById('joinBtn').disabled = full;
+    document.getElementById('fullMsg').className = full ? 'full-msg show' : 'full-msg';
+  }
+
+  function renderAdmin() {
+    document.getElementById('adminMeta').textContent =
+      liveQueue.length === 0 ? 'No participants yet' : `${liveQueue.length} participant${liveQueue.length > 1 ? 's' : ''}`;
+    const wrap = document.getElementById('adminQueueWrap');
+    if (liveQueue.length === 0) {
+      wrap.innerHTML = '<div class="empty-queue">// QUEUE IS EMPTY //</div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table class="queue-table">
+        <thead><tr><th>#</th><th>Name</th><th>Song</th><th></th></tr></thead>
+        <tbody>
+          ${liveQueue.map((item, i) => `
+            <tr>
+              <td class="td-num">${i + 1}</td>
+              <td class="td-name">${esc(item.name)}</td>
+              <td class="td-song">♪ ${esc(item.song)}</td>
+              <td class="td-action"><button class="btn-remove" data-key="${esc(item.key)}">✕</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+    wrap.querySelectorAll('.btn-remove').forEach(btn => {
+      btn.addEventListener('click', () => removeItem(btn.dataset.key));
+    });
+  }
+
+  window.joinQueue = async function() {
+    const name = document.getElementById('inputName').value.trim();
+    const song = document.getElementById('inputSong').value.trim();
+    const err = document.getElementById('formErr');
+    if (!name || !song) { err.className = 'err-msg show'; return; }
+    err.className = 'err-msg';
+    if (liveQueue.length >= MAX_SLOTS) { showToast('Queue is full!', true); return; }
+    const btn = document.getElementById('joinBtn');
+    btn.disabled = true; btn.textContent = 'ADDING…';
+    try {
+      await push(queueRef, { name, song, ts: serverTimestamp() });
+      document.getElementById('successName').textContent = name;
+      document.getElementById('successSong').textContent = '♪ ' + song;
+      document.getElementById('joinFormCard').style.display = 'none';
+      document.getElementById('successCard').className = 'success-card show';
+    } catch(e) {
+      showToast('Failed to join. Try again.', true);
+      btn.disabled = false;
+    }
+    btn.textContent = '▶ GRAB MY SLOT';
+  };
+
+  window.resetForm = function() {
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputSong').value = '';
+    document.getElementById('joinFormCard').style.display = 'block';
+    document.getElementById('successCard').className = 'success-card';
+  };
+
+  window.removeItem = async function(key) {
+    if (!isAdmin) return;
+    try { await remove(ref(db, `karaoke/queue/${key}`)); showToast('Participant removed.'); }
+    catch(e) { showToast('Error removing.', true); }
+  };
+
+  window.clearAll = async function() {
+    if (!isAdmin) return;
+    if (!confirm('Clear the entire queue?')) return;
+    try { await set(queueRef, null); showToast('Queue cleared.'); }
+    catch(e) { showToast('Error.', true); }
+  };
+
+  window.toggleAdminPanel = function() {
+    document.getElementById('adminLoginPanel').classList.toggle('visible');
+  };
+
+  window.adminLogin = function() {
+    const pw = document.getElementById('adminPwInput').value;
+    const err = document.getElementById('adminErr');
+    if (pw === ADMIN_PASSWORD) {
+      isAdmin = true;
+      document.getElementById('publicView').style.display = 'none';
+      document.getElementById('adminView').style.display = 'block';
+      err.className = 'err-msg';
+      showToast('Admin mode activated 🔓');
+      renderAdmin();
+    } else {
+      err.className = 'err-msg show';
+      document.getElementById('adminPwInput').value = '';
+    }
+  };
+
+  window.adminLogout = function() {
+    isAdmin = false;
+    document.getElementById('adminView').style.display = 'none';
+    document.getElementById('publicView').style.display = 'block';
+    document.getElementById('adminPwInput').value = '';
+    showToast('Logged out.');
+  };
+</script>
+</body>
+</html>
